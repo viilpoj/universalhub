@@ -1,6 +1,6 @@
 --[[
     ╔═══════════════════════════════════════╗
-    ║        RAMDOM HUB  v3.5.1             ║
+    ║        RAMDOM HUB  v3.6.1             ║
     ║        Fly • Speed • Teleport         ║
     ╚═══════════════════════════════════════╝
 ]]
@@ -30,19 +30,20 @@ local CONFIG = {
     DefaultSpeed = 50,
     StepSize = 25,
     DefaultWalkSpeed = 16,
-    Version = "3.5.1",
+    Version = "3.6.1",
     UISize = UDim2.new(0, 620, 0, 500),
     UIOffset = UDim2.new(0.5, -310, 0.5, -250),
     AntiAfkInterval = 300,
     AutoScanInterval = 5,
+    UIScale = 1,
 }
 local speed = CONFIG.DefaultSpeed
 
 --// 📝 Histórico de atualizações (só as 3 mais recentes)
 local CHANGELOG = {
-    {version = "v3.5.1", notes = "Remover Teclas + descrições removidas"},
-    {version = "v3.5", notes = "Botão remover todas as teclas"},
-    {version = "v3.4.1", notes = "Changelog com 3 versões + dado só no botão"},
+    {version = "v3.6.1", notes = "Hitbox do drag maior + arrasto contínuo"},
+    {version = "v3.6", notes = "Escala de UI + arrastar em todas as bordas"},
+    {version = "v3.5.3", notes = "Todos os ☁ viraram 🎲"},
 }
 
 --// Keybinds configuráveis
@@ -114,23 +115,41 @@ local function tween(obj, props, time, style, dir)
     t:Play()
     return t
 end
-local function makeDraggable(frame, dragTarget)
-    dragTarget = dragTarget or frame
-    local dragging, dragStart, startPos
-    dragTarget.InputBegan:Connect(function(input)
-        if input.UserInputType == Enum.UserInputType.MouseButton1 or input.UserInputType == Enum.UserInputType.Touch then
+
+-- ✅ ==========================================
+-- ✅ SISTEMA DE DRAG MELHORADO
+-- ✅ ==========================================
+local function makeDraggable(handle, target)
+    local dragging = false
+    local dragStart, startPos
+    
+    -- INÍCIO do drag (mouse botão esquerdo OU toque)
+    handle.InputBegan:Connect(function(input)
+        if input.UserInputType == Enum.UserInputType.MouseButton1
+        or input.UserInputType == Enum.UserInputType.Touch then
             dragging = true
             dragStart = input.Position
-            startPos = frame.Position
+            startPos = target.Position
+            
+            -- Escuta o FIM do drag direto nesse input
             input.Changed:Connect(function()
-                if input.UserInputState == Enum.UserInputState.End then dragging = false end
+                if input.UserInputState == Enum.UserInputState.End then
+                    dragging = false
+                end
             end)
         end
     end)
-    dragTarget.InputChanged:Connect(function(input)
-        if dragging and (input.UserInputType == Enum.UserInputType.MouseMovement or input.UserInputType == Enum.UserInputType.Touch) then
+    
+    -- MOVIMENTO contínuo enquanto segura
+    handle.InputChanged:Connect(function(input)
+        if not dragging then return end
+        if input.UserInputType == Enum.UserInputType.MouseMovement
+        or input.UserInputType == Enum.UserInputType.Touch then
             local delta = input.Position - dragStart
-            frame.Position = UDim2.new(startPos.X.Scale, startPos.X.Offset + delta.X, startPos.Y.Scale, startPos.Y.Offset + delta.Y)
+            target.Position = UDim2.new(
+                startPos.X.Scale, startPos.X.Offset + delta.X,
+                startPos.Y.Scale, startPos.Y.Offset + delta.Y
+            )
         end
     end)
 end
@@ -171,6 +190,11 @@ addCorner(Main, 18)
 addStroke(Main, Theme.Stroke, 1, 0.3)
 addGradient(Main, Color3.fromRGB(24, 24, 32), Color3.fromRGB(14, 14, 18), 90)
 
+-- ✅ UIScale pro slider de escala
+local UIScaleInstance = Instance.new("UIScale")
+UIScaleInstance.Scale = CONFIG.UIScale
+UIScaleInstance.Parent = Main
+
 --// Header
 local HEADER_H = 72
 local Header = Instance.new("Frame")
@@ -197,10 +221,10 @@ Logo.Size = UDim2.new(0, 42, 0, 42)
 Logo.Position = UDim2.new(0, 20, 0.5, -21)
 Logo.BackgroundColor3 = Color3.fromRGB(255, 255, 255)
 Logo.BackgroundTransparency = 0.85
-Logo.Text = "☁"
+Logo.Text = "🎲"
 Logo.TextColor3 = Color3.fromRGB(255, 255, 255)
 Logo.Font = Enum.Font.GothamBold
-Logo.TextSize = 28
+Logo.TextSize = 24
 Logo.ZIndex = 4
 Logo.Parent = Header
 addCorner(Logo, 12)
@@ -252,7 +276,64 @@ CloseBtn.MouseLeave:Connect(function()
     tween(CloseBtn, {BackgroundTransparency = 0.85, BackgroundColor3 = Color3.fromRGB(255,255,255)}, 0.15)
 end)
 
-makeDraggable(Main, Header)
+-- Header também arrasta
+makeDraggable(Header, Main)
+
+-- ✅ ==========================================
+-- ✅ HANDLES DE DRAG (HITBOX AUMENTADA)
+-- ✅ ==========================================
+local function createDragHandle(axis)
+    local h = Instance.new("Frame")
+    h.Name = "Drag_" .. axis
+    h.BackgroundTransparency = 1
+    h.BackgroundColor3 = Color3.fromRGB(255, 0, 0)
+    h.BorderSizePixel = 0
+    h.Active = true
+    h.ZIndex = 10
+    h.Parent = Main
+    
+    -- 🎯 HITBOX AUMENTADA
+    local EDGE = 16      -- bordas
+    local CORNER = 36    -- cantos
+    
+    if axis == "left" then
+        h.Size = UDim2.new(0, EDGE, 1, -HEADER_H)
+        h.Position = UDim2.new(0, 0, 0, HEADER_H)
+    elseif axis == "right" then
+        h.Size = UDim2.new(0, EDGE, 1, -HEADER_H)
+        h.Position = UDim2.new(1, -EDGE, 0, HEADER_H)
+    elseif axis == "top" then
+        h.Size = UDim2.new(1, -140, 0, EDGE)
+        h.Position = UDim2.new(0, 0, 0, 0)
+    elseif axis == "bottom" then
+        h.Size = UDim2.new(1, 0, 0, EDGE)
+        h.Position = UDim2.new(0, 0, 1, -EDGE)
+    elseif axis == "topleft" then
+        h.Size = UDim2.new(0, CORNER, 0, CORNER)
+        h.Position = UDim2.new(0, 0, 0, 0)
+    elseif axis == "topright" then
+        h.Size = UDim2.new(0, CORNER, 0, CORNER)
+        h.Position = UDim2.new(1, -CORNER, 0, 0)
+    elseif axis == "bottomleft" then
+        h.Size = UDim2.new(0, CORNER, 0, CORNER)
+        h.Position = UDim2.new(0, 0, 1, -CORNER)
+    elseif axis == "bottomright" then
+        h.Size = UDim2.new(0, CORNER, 0, CORNER)
+        h.Position = UDim2.new(1, -CORNER, 1, -CORNER)
+    end
+    
+    makeDraggable(h, Main)
+    return h
+end
+
+createDragHandle("left")
+createDragHandle("right")
+createDragHandle("top")
+createDragHandle("bottom")
+createDragHandle("topleft")
+createDragHandle("topright")
+createDragHandle("bottomleft")
+createDragHandle("bottomright")
 
 --// Sidebar
 local SIDEBAR_W = 140
@@ -439,6 +520,95 @@ local function createCard(parent, height, order)
     addStroke(card, Theme.Stroke, 1, 0.5)
     addGradient(card, Theme.CardHover, Theme.Card, 90)
     return card
+end
+
+-- Slider row reutilizável
+local function makeSliderRow(parent, label, mn, mx, def, order, onChange, step, isInt)
+    local row = createCard(parent, 72, order)
+    local valLbl
+    local fmt = isInt and "%d" or "%.2f"
+    local numDef = tonumber(def) or mn
+    
+    local titleLbl = Instance.new("TextLabel")
+    titleLbl.Size = UDim2.new(1, -120, 0, 20)
+    titleLbl.Position = UDim2.new(0, 18, 0, 14)
+    titleLbl.BackgroundTransparency = 1
+    titleLbl.Text = label
+    titleLbl.TextColor3 = Theme.Text
+    titleLbl.Font = Enum.Font.GothamBold
+    titleLbl.TextSize = 14
+    titleLbl.TextXAlignment = Enum.TextXAlignment.Left
+    titleLbl.ZIndex = 5
+    titleLbl.Parent = row
+    
+    valLbl = Instance.new("TextLabel")
+    valLbl.Size = UDim2.new(0, 80, 0, 20)
+    valLbl.Position = UDim2.new(1, -100, 0, 14)
+    valLbl.BackgroundTransparency = 1
+    valLbl.Text = string.format(fmt, numDef)
+    valLbl.TextColor3 = Theme.Accent2
+    valLbl.Font = Enum.Font.GothamBold
+    valLbl.TextSize = 14
+    valLbl.TextXAlignment = Enum.TextXAlignment.Right
+    valLbl.ZIndex = 5
+    valLbl.Parent = row
+    
+    local bar = Instance.new("Frame")
+    bar.Size = UDim2.new(1, -36, 0, 6)
+    bar.Position = UDim2.new(0, 18, 0, 52)
+    bar.BackgroundColor3 = Color3.fromRGB(15, 15, 20)
+    bar.BorderSizePixel = 0
+    bar.ZIndex = 5
+    bar.Parent = row
+    addCorner(bar, 3)
+    
+    local pct0 = math.clamp((numDef - mn) / (mx - mn), 0, 1)
+    local fill = Instance.new("Frame")
+    fill.Size = UDim2.new(pct0, 0, 1, 0)
+    fill.BackgroundColor3 = Color3.fromRGB(255, 255, 255)
+    fill.BorderSizePixel = 0
+    fill.ZIndex = 6
+    fill.Parent = bar
+    addCorner(fill, 3)
+    addGradient(fill, Theme.Accent1, Theme.Accent2, 0)
+    
+    local knob = Instance.new("Frame")
+    knob.Size = UDim2.fromOffset(18, 18)
+    knob.AnchorPoint = Vector2.new(0.5, 0.5)
+    knob.Position = UDim2.new(pct0, 0, 0.5, 0)
+    knob.BackgroundColor3 = Color3.fromRGB(255, 255, 255)
+    knob.ZIndex = 7
+    knob.Parent = bar
+    addCorner(knob, 9)
+    
+    local drag = false
+    local function upd(x)
+        local rel = math.clamp((x - bar.AbsolutePosition.X) / math.max(bar.AbsoluteSize.X, 1), 0, 1)
+        local v = mn + (mx - mn) * rel
+        if step then v = math.floor(v / step + 0.5) * step end
+        fill.Size = UDim2.new(rel, 0, 1, 0)
+        knob.Position = UDim2.new(rel, 0, 0.5, 0)
+        valLbl.Text = string.format(fmt, v)
+        if onChange then onChange(v) end
+    end
+    bar.InputBegan:Connect(function(i)
+        if i.UserInputType == Enum.UserInputType.MouseButton1 or i.UserInputType == Enum.UserInputType.Touch then
+            drag = true
+            upd(i.Position.X)
+        end
+    end)
+    UserInputService.InputChanged:Connect(function(i)
+        if drag and (i.UserInputType == Enum.UserInputType.MouseMovement or i.UserInputType == Enum.UserInputType.Touch) then
+            upd(i.Position.X)
+        end
+    end)
+    UserInputService.InputEnded:Connect(function(i)
+        if i.UserInputType == Enum.UserInputType.MouseButton1 or i.UserInputType == Enum.UserInputType.Touch then
+            drag = false
+        end
+    end)
+    
+    return row
 end
 
 --// ==========================================
@@ -755,7 +925,7 @@ local function createNpcRow(npcModel, order)
     tpBtn.Position = UDim2.new(1, -42, 0.5, -14)
     tpBtn.BackgroundColor3 = Theme.Accent1
     tpBtn.BorderSizePixel = 0
-    tpBtn.Text = "☁"
+    tpBtn.Text = "🎲"
     tpBtn.TextColor3 = Color3.fromRGB(255, 255, 255)
     tpBtn.Font = Enum.Font.GothamBold
     tpBtn.TextSize = 16
@@ -868,8 +1038,16 @@ end)
 --// ==========================================
 local setPage = createTab("Config", 3)
 
---// ===== ANTI-AFK (sem sub-descrição) =====
-local AfkCard = createCard(setPage, 80, 1)
+-- ✅ Seção ESCALA DE UI
+createSectionTitle(setPage, "ESCALA DE UI", 0)
+makeSliderRow(setPage, "Tamanho da UI", 0.5, 1.5, CONFIG.UIScale, 1, function(v)
+    CONFIG.UIScale = v
+    UIScaleInstance.Scale = v
+end, 0.05, false)
+
+--// ===== ANTI-AFK =====
+createSectionTitle(setPage, "SISTEMA", 2)
+local AfkCard = createCard(setPage, 80, 3)
 
 local AfkStatus = Instance.new("TextLabel")
 AfkStatus.Size = UDim2.new(1, -180, 1, 0)
@@ -881,8 +1059,6 @@ AfkStatus.Font = Enum.Font.GothamBold
 AfkStatus.TextSize = 15
 AfkStatus.TextXAlignment = Enum.TextXAlignment.Left
 AfkStatus.Parent = AfkCard
-
--- ❌ AfkSub (descrição) REMOVIDO
 
 local AfkToggle = Instance.new("TextButton")
 AfkToggle.Size = UDim2.new(0, 130, 0, 44)
@@ -905,8 +1081,8 @@ AfkToggle.MouseLeave:Connect(function()
     tween(AfkToggle, {Size = UDim2.new(0, 130, 0, 44), Position = UDim2.new(1, -148, 0.5, -22)}, 0.12)
 end)
 
---// ===== NOCLIP (sem sub-descrição) =====
-local NoclipCard = createCard(setPage, 80, 2)
+--// ===== NOCLIP =====
+local NoclipCard = createCard(setPage, 80, 4)
 
 local NoclipStatus = Instance.new("TextLabel")
 NoclipStatus.Size = UDim2.new(1, -180, 1, 0)
@@ -918,8 +1094,6 @@ NoclipStatus.Font = Enum.Font.GothamBold
 NoclipStatus.TextSize = 15
 NoclipStatus.TextXAlignment = Enum.TextXAlignment.Left
 NoclipStatus.Parent = NoclipCard
-
--- ❌ NoclipSub (descrição) REMOVIDO
 
 local NoclipToggle = Instance.new("TextButton")
 NoclipToggle.Size = UDim2.new(0, 130, 0, 44)
@@ -943,8 +1117,8 @@ NoclipToggle.MouseLeave:Connect(function()
 end)
 
 --// ===== KEYBINDS =====
-createSectionTitle(setPage, "TECLAS PERSONALIZADAS", 3)
-local KeyCard = createCard(setPage, 280, 4)
+createSectionTitle(setPage, "TECLAS PERSONALIZADAS", 5)
+local KeyCard = createCard(setPage, 280, 6)
 
 local KeybindLabels = {}
 local listeningFor = nil
@@ -998,7 +1172,6 @@ makeKeybindRow(KeyCard, "Ativar Speed", "Speed", 70)
 makeKeybindRow(KeyCard, "Abrir/Fechar UI", "ToggleUI", 120)
 makeKeybindRow(KeyCard, "Ativar Noclip", "Noclip", 170)
 
--- 🆕 Botão "Remover Teclas" (sem emoji, cor fixa)
 local RemoveAllBtn = Instance.new("TextButton")
 RemoveAllBtn.Size = UDim2.new(1, -36, 0, 42)
 RemoveAllBtn.Position = UDim2.new(0, 18, 0, 220)
@@ -1021,18 +1194,15 @@ RemoveAllBtn.MouseLeave:Connect(function()
 end)
 
 RemoveAllBtn.MouseButton1Click:Connect(function()
-    -- Define todas as teclas como "Unknown" (nenhuma)
     Keybinds.Fly = Enum.KeyCode.Unknown
     Keybinds.Speed = Enum.KeyCode.Unknown
     Keybinds.ToggleUI = Enum.KeyCode.Unknown
     Keybinds.Noclip = Enum.KeyCode.Unknown
     
-    -- Atualiza os botões visuais
     for keyName, btn in pairs(KeybindLabels) do
         btn.Text = "Nenhuma"
         btn.TextColor3 = Theme.TextDim
     end
-    -- ✅ NÃO muda cor do botão (mantém vermelho)
 end)
 
 local hint = Instance.new("TextLabel")
@@ -1044,14 +1214,14 @@ hint.TextTransparency = 0.3
 hint.Font = Enum.Font.Gotham
 hint.TextSize = 11
 hint.TextXAlignment = Enum.TextXAlignment.Left
-hint.LayoutOrder = 5
+hint.LayoutOrder = 7
 hint.Parent = setPage
 
 --// ===== CHANGELOG =====
-createSectionTitle(setPage, "ATUALIZAÇÕES", 6)
+createSectionTitle(setPage, "ATUALIZAÇÕES", 8)
 
 local changelogHeight = 30 + (#CHANGELOG * 18)
-local ChangelogCard = createCard(setPage, changelogHeight, 7)
+local ChangelogCard = createCard(setPage, changelogHeight, 9)
 
 for i, entry in ipairs(CHANGELOG) do
     local row = Instance.new("TextLabel")
@@ -1231,16 +1401,14 @@ end
 --// ==========================================
 local noclipRunning = false
 local noclipConnection = nil
-local originalCollide = {}
 
-local function applyNoclip()
+local function applyNoclipToChar()
     local char = player.Character
     if not char then return end
+    local hrp = char:FindFirstChild("HumanoidRootPart")
+    if hrp then hrp.CanCollide = false end
     for _, part in ipairs(char:GetDescendants()) do
         if part:IsA("BasePart") then
-            if originalCollide[part] == nil then
-                originalCollide[part] = part.CanCollide
-            end
             part.CanCollide = false
         end
     end
@@ -1251,14 +1419,9 @@ local function restoreNoclip()
     if not char then return end
     for _, part in ipairs(char:GetDescendants()) do
         if part:IsA("BasePart") then
-            local original = originalCollide[part]
-            if original == nil then
-                original = true
-            end
-            part.CanCollide = original
+            part.CanCollide = true
         end
     end
-    originalCollide = {}
 end
 
 local function startNoclip()
@@ -1267,11 +1430,12 @@ local function startNoclip()
     NoclipStatus.Text = "NOCLIP  ✓"
     NoclipToggle.Text = "ATIVADO"
     NoclipGradient.Color = gradOn()
-    originalCollide = {}
-    applyNoclip()
+    applyNoclipToChar()
     if noclipConnection then noclipConnection:Disconnect() end
-    noclipConnection = RunService.Stepped:Connect(function()
-        if noclipRunning then applyNoclip() end
+    noclipConnection = RunService.Heartbeat:Connect(function()
+        if noclipRunning then
+            applyNoclipToChar()
+        end
     end)
 end
 
@@ -1481,7 +1645,7 @@ UserInputService.InputBegan:Connect(function(input, gpe)
     if input.KeyCode == Enum.KeyCode.Down then changeSpeed(-CONFIG.StepSize) end
 end)
 
-player.CharacterAdded:Connect(function()
+player.CharacterAdded:Connect(function(char)
     task.wait(1)
     if flying then
         flying = false
@@ -1491,9 +1655,8 @@ player.CharacterAdded:Connect(function()
     if speeding then startSpeed() end
     
     if noclipRunning then
-        originalCollide = {}
         task.wait(0.3)
-        applyNoclip()
+        applyNoclipToChar()
     end
 end)
 
@@ -1503,6 +1666,6 @@ tween(Main, {Size = CONFIG.UISize, Position = CONFIG.UIOffset}, 0.35, Enum.Easin
 
 StarterGui:SetCore("SendNotification", {
     Title = "RAMDOM HUB v" .. CONFIG.Version,
-    Text = "Remover Teclas + UI limpa",
+    Text = "Hitbox do drag melhorada 🖐️",
     Duration = 5,
 })
