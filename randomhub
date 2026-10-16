@@ -1,4 +1,11 @@
--- INVENCIVEL HUB v3.3 | Fly • Speed • Teleport
+--[[
+    ╔═══════════════════════════════════════╗
+    ║        RAMDOM HUB  v3.5.1             ║
+    ║        Fly • Speed • Teleport         ║
+    ╚═══════════════════════════════════════╝
+]]
+
+--// Serviços
 local Players = game:GetService("Players")
 local UserInputService = game:GetService("UserInputService")
 local RunService = game:GetService("RunService")
@@ -10,18 +17,20 @@ local VirtualUser = game:GetService("VirtualUser")
 local player = Players.LocalPlayer
 local camera = workspace.CurrentCamera
 
+--// Limpar UI antiga
 pcall(function()
     if CoreGui:FindFirstChild("FlyUI") then CoreGui.FlyUI:Destroy() end
     if CoreGui:FindFirstChild("FlyToggle") then CoreGui.FlyToggle:Destroy() end
 end)
 
+--// Config
 local CONFIG = {
     MinSpeed = 1,
     MaxSpeed = 1500,
     DefaultSpeed = 50,
     StepSize = 25,
     DefaultWalkSpeed = 16,
-    Version = "3.3",
+    Version = "3.5.1",
     UISize = UDim2.new(0, 620, 0, 500),
     UIOffset = UDim2.new(0.5, -310, 0.5, -250),
     AntiAfkInterval = 300,
@@ -29,21 +38,14 @@ local CONFIG = {
 }
 local speed = CONFIG.DefaultSpeed
 
+--// 📝 Histórico de atualizações (só as 3 mais recentes)
 local CHANGELOG = {
-    {version = "v3.3", notes = "Botão pequeno voltou com nuvem ☁"},
-    {version = "v3.2", notes = "INV maior e centralizado no botão pequeno"},
-    {version = "v3.1", notes = "INV no botão pequeno, sem bolinha, sem emojis nas abas"},
-    {version = "v3.0", notes = "Noclip corrigido (restaura colisão ao desativar)"},
-    {version = "v2.9", notes = "Auto-scan 5s + removeu teleportes rápidos"},
-    {version = "v2.8", notes = "Botões mostram ATIVADO/DESATIVADO"},
-    {version = "v2.7", notes = "Changelog + emojis restaurados nas teclas"},
-    {version = "v2.6", notes = "Anti-AFK e Noclip sem título separado"},
-    {version = "v2.5", notes = "Cores unificadas em todos os toggles"},
-    {version = "v2.4", notes = "Anti-AFK refeito + Noclip adicionado"},
-    {version = "v2.3", notes = "Sistema de abas (Fly / TP / Config)"},
-    {version = "v2.0", notes = "Redesign completo com sidebar"},
+    {version = "v3.5.1", notes = "Remover Teclas + descrições removidas"},
+    {version = "v3.5", notes = "Botão remover todas as teclas"},
+    {version = "v3.4.1", notes = "Changelog com 3 versões + dado só no botão"},
 }
 
+--// Keybinds configuráveis
 local Keybinds = {
     Fly = Enum.KeyCode.F,
     Speed = Enum.KeyCode.G,
@@ -51,6 +53,7 @@ local Keybinds = {
     Noclip = Enum.KeyCode.N,
 }
 
+--// Tema
 local Theme = {
     Bg           = Color3.fromRGB(18, 18, 24),
     BgSecondary  = Color3.fromRGB(26, 26, 34),
@@ -67,6 +70,7 @@ local Theme = {
     TextDim      = Color3.fromRGB(150, 150, 170),
 }
 
+--// Helpers
 local function addCorner(parent, radius)
     local c = Instance.new("UICorner")
     c.CornerRadius = UDim.new(0, radius or 10)
@@ -131,6 +135,7 @@ local function makeDraggable(frame, dragTarget)
     end)
 end
 
+--// Gradientes preset
 local function gradOn()
     return ColorSequence.new{
         ColorSequenceKeypoint.new(0, Theme.Accent2),
@@ -144,6 +149,9 @@ local function gradOff()
     }
 end
 
+--// ==========================================
+--// UI PRINCIPAL
+--// ==========================================
 local ScreenGui = Instance.new("ScreenGui")
 ScreenGui.Name = "FlyUI"
 ScreenGui.ResetOnSpawn = false
@@ -163,6 +171,7 @@ addCorner(Main, 18)
 addStroke(Main, Theme.Stroke, 1, 0.3)
 addGradient(Main, Color3.fromRGB(24, 24, 32), Color3.fromRGB(14, 14, 18), 90)
 
+--// Header
 local HEADER_H = 72
 local Header = Instance.new("Frame")
 Header.Name = "Header"
@@ -200,7 +209,7 @@ local Title = Instance.new("TextLabel")
 Title.Size = UDim2.new(1, -180, 0, 24)
 Title.Position = UDim2.new(0, 74, 0, 16)
 Title.BackgroundTransparency = 1
-Title.Text = "INVENCIVEL HUB"
+Title.Text = "RAMDOM HUB"
 Title.TextColor3 = Color3.fromRGB(255, 255, 255)
 Title.Font = Enum.Font.GothamBold
 Title.TextSize = 18
@@ -212,7 +221,7 @@ local Subtitle = Instance.new("TextLabel")
 Subtitle.Size = UDim2.new(1, -180, 0, 16)
 Subtitle.Position = UDim2.new(0, 74, 0, 40)
 Subtitle.BackgroundTransparency = 1
-Subtitle.Text = "v" .. CONFIG.Version .. "  •  Fly • TP • AFK • Noclip"
+Subtitle.Text = "v" .. CONFIG.Version .. "  •  Fly • TP"
 Subtitle.TextColor3 = Color3.fromRGB(255, 255, 255)
 Subtitle.TextTransparency = 0.3
 Subtitle.Font = Enum.Font.Gotham
@@ -245,6 +254,7 @@ end)
 
 makeDraggable(Main, Header)
 
+--// Sidebar
 local SIDEBAR_W = 140
 local Sidebar = Instance.new("Frame")
 Sidebar.Name = "Sidebar"
@@ -283,6 +293,7 @@ Pages.BackgroundTransparency = 1
 Pages.ZIndex = 1
 Pages.Parent = Main
 
+--// Criação de abas
 local tabs = {}
 local pages = {}
 
@@ -299,7 +310,7 @@ local function createTab(name, order)
     btn.ZIndex = 2
     btn.Parent = TabHolder
     addCorner(btn, 10)
-
+    
     local nameLbl = Instance.new("TextLabel")
     nameLbl.Size = UDim2.new(1, -20, 1, 0)
     nameLbl.Position = UDim2.new(0, 14, 0, 0)
@@ -318,7 +329,7 @@ local function createTab(name, order)
     }
     textGrad.Rotation = 0
     textGrad.Parent = nameLbl
-
+    
     local indicator = Instance.new("Frame")
     indicator.Size = UDim2.new(0, 4, 0.55, 0)
     indicator.Position = UDim2.new(0, -10, 0.5, 0)
@@ -329,7 +340,7 @@ local function createTab(name, order)
     indicator.ZIndex = 3
     indicator.Parent = btn
     addCorner(indicator, 2)
-
+    
     local page = Instance.new("ScrollingFrame")
     page.Name = name .. "Page"
     page.Size = UDim2.new(1, 0, 1, 0)
@@ -341,7 +352,7 @@ local function createTab(name, order)
     page.Visible = false
     page.ZIndex = 1
     page.Parent = Pages
-
+    
     local content = Instance.new("Frame")
     content.Name = "Content"
     content.Size = UDim2.new(1, -36, 0, 0)
@@ -351,18 +362,19 @@ local function createTab(name, order)
     content.AutomaticSize = Enum.AutomaticSize.Y
     content.ZIndex = 1
     content.Parent = page
-
+    
     local pageLayout = Instance.new("UIListLayout")
     pageLayout.Padding = UDim.new(0, 10)
     pageLayout.SortOrder = Enum.SortOrder.LayoutOrder
     pageLayout.Parent = content
-
+    
     content:GetPropertyChangedSignal("AbsoluteSize"):Connect(function()
         page.CanvasSize = UDim2.new(0, 0, 0, content.AbsoluteSize.Y + 36)
     end)
-
+    
     tabs[name] = {btn = btn, indicator = indicator, nameLbl = nameLbl}
     pages[name] = page
+    
     return content
 end
 
@@ -401,6 +413,7 @@ local function setupTabHover(name)
     end)
 end
 
+--// Helpers de UI
 local function createSectionTitle(parent, text, order)
     local lbl = Instance.new("TextLabel")
     lbl.Size = UDim2.new(1, 0, 0, 26)
@@ -428,6 +441,9 @@ local function createCard(parent, height, order)
     return card
 end
 
+--// ==========================================
+--// PÁGINA: FLY
+--// ==========================================
 local flyPage = createTab("Fly", 1)
 createSectionTitle(flyPage, "CONTROLES DE VOO", 1)
 
@@ -591,6 +607,9 @@ for _, b in ipairs({MinusBtn, PlusBtn}) do
     b.MouseLeave:Connect(function() tween(b, {BackgroundColor3 = Theme.BgSecondary}, 0.12) end)
 end
 
+--// ==========================================
+--// PÁGINA: TELEPORT
+--// ==========================================
 local tpPage = createTab("Teleport", 2)
 local NpcCard = createCard(tpPage, 420, 1)
 
@@ -700,7 +719,7 @@ local function createNpcRow(npcModel, order)
     row.Parent = NpcInner
     addCorner(row, 8)
     addStroke(row, Theme.Stroke, 1, 0.7)
-
+    
     local dot = Instance.new("Frame")
     dot.Size = UDim2.new(0, 10, 0, 10)
     dot.Position = UDim2.new(0, 14, 0.5, -5)
@@ -708,7 +727,7 @@ local function createNpcRow(npcModel, order)
     dot.BorderSizePixel = 0
     dot.Parent = row
     addCorner(dot, 5)
-
+    
     local nameLbl = Instance.new("TextLabel")
     nameLbl.Size = UDim2.new(1, -170, 1, 0)
     nameLbl.Position = UDim2.new(0, 34, 0, 0)
@@ -720,7 +739,7 @@ local function createNpcRow(npcModel, order)
     nameLbl.TextXAlignment = Enum.TextXAlignment.Left
     nameLbl.TextTruncate = Enum.TextTruncate.AtEnd
     nameLbl.Parent = row
-
+    
     local distLbl = Instance.new("TextLabel")
     distLbl.Size = UDim2.new(0, 70, 1, 0)
     distLbl.Position = UDim2.new(1, -110, 0, 0)
@@ -730,7 +749,7 @@ local function createNpcRow(npcModel, order)
     distLbl.Font = Enum.Font.Gotham
     distLbl.TextSize = 11
     distLbl.Parent = row
-
+    
     local tpBtn = Instance.new("TextButton")
     tpBtn.Size = UDim2.new(0, 38, 0, 28)
     tpBtn.Position = UDim2.new(1, -42, 0.5, -14)
@@ -743,7 +762,7 @@ local function createNpcRow(npcModel, order)
     tpBtn.AutoButtonColor = false
     tpBtn.Parent = row
     addCorner(tpBtn, 6)
-
+    
     local conn
     conn = RunService.Heartbeat:Connect(function()
         if not npcModel.Parent or not row.Parent then conn:Disconnect() return end
@@ -753,10 +772,10 @@ local function createNpcRow(npcModel, order)
             distLbl.Text = math.floor(dist) .. " m"
         end
     end)
-
+    
     row.MouseEnter:Connect(function() tween(row, {BackgroundColor3 = Theme.CardHover}, 0.12) end)
     row.MouseLeave:Connect(function() tween(row, {BackgroundColor3 = Theme.BgSecondary}, 0.12) end)
-
+    
     local function doTp()
         local hrp = npcModel:FindFirstChild("HumanoidRootPart")
         if hrp then
@@ -787,7 +806,7 @@ local function scanNPCs(force)
             table.insert(npcs, obj)
         end
     end
-
+    
     local char = player.Character
     if char and char:FindFirstChild("HumanoidRootPart") then
         local myPos = char.HumanoidRootPart.Position
@@ -798,14 +817,14 @@ local function scanNPCs(force)
             return (myPos - aP.Position).Magnitude < (myPos - bP.Position).Magnitude
         end)
     end
-
+    
     local sigParts = {}
     for i, npc in ipairs(npcs) do
         if i > 100 then break end
         table.insert(sigParts, npc.Name .. "|" .. npc:GetDebugId())
     end
     local newSig = table.concat(sigParts, ",")
-
+    
     if newSig == lastNpcSignature and not force then
         if #npcs == 0 then
             NpcCount.Text = "Nenhum NPC encontrado"
@@ -816,16 +835,16 @@ local function scanNPCs(force)
         end
         return
     end
-
+    
     lastNpcSignature = newSig
-
+    
     for _, child in ipairs(NpcInner:GetChildren()) do
         if child:IsA("TextButton") then child:Destroy() end
     end
-
+    
     local limit = math.min(#npcs, 100)
     for i = 1, limit do createNpcRow(npcs[i], i) end
-
+    
     if #npcs == 0 then
         NpcCount.Text = "Nenhum NPC encontrado"
         NpcCount.TextColor3 = Theme.Danger
@@ -844,8 +863,12 @@ task.spawn(function()
     end
 end)
 
+--// ==========================================
+--// PÁGINA: CONFIG
+--// ==========================================
 local setPage = createTab("Config", 3)
 
+--// ===== ANTI-AFK (sem sub-descrição) =====
 local AfkCard = createCard(setPage, 80, 1)
 
 local AfkStatus = Instance.new("TextLabel")
@@ -859,17 +882,7 @@ AfkStatus.TextSize = 15
 AfkStatus.TextXAlignment = Enum.TextXAlignment.Left
 AfkStatus.Parent = AfkCard
 
-local AfkSub = Instance.new("TextLabel")
-AfkSub.Size = UDim2.new(1, -180, 0, 16)
-AfkSub.Position = UDim2.new(0, 18, 0, 48)
-AfkSub.BackgroundTransparency = 1
-AfkSub.Text = "Clique invisível a cada 5 min"
-AfkSub.TextColor3 = Theme.TextDim
-AfkSub.TextTransparency = 0.3
-AfkSub.Font = Enum.Font.Gotham
-AfkSub.TextSize = 11
-AfkSub.TextXAlignment = Enum.TextXAlignment.Left
-AfkSub.Parent = AfkCard
+-- ❌ AfkSub (descrição) REMOVIDO
 
 local AfkToggle = Instance.new("TextButton")
 AfkToggle.Size = UDim2.new(0, 130, 0, 44)
@@ -892,6 +905,7 @@ AfkToggle.MouseLeave:Connect(function()
     tween(AfkToggle, {Size = UDim2.new(0, 130, 0, 44), Position = UDim2.new(1, -148, 0.5, -22)}, 0.12)
 end)
 
+--// ===== NOCLIP (sem sub-descrição) =====
 local NoclipCard = createCard(setPage, 80, 2)
 
 local NoclipStatus = Instance.new("TextLabel")
@@ -905,17 +919,7 @@ NoclipStatus.TextSize = 15
 NoclipStatus.TextXAlignment = Enum.TextXAlignment.Left
 NoclipStatus.Parent = NoclipCard
 
-local NoclipSub = Instance.new("TextLabel")
-NoclipSub.Size = UDim2.new(1, -180, 0, 16)
-NoclipSub.Position = UDim2.new(0, 18, 0, 48)
-NoclipSub.BackgroundTransparency = 1
-NoclipSub.Text = "Atravessa paredes e objetos"
-NoclipSub.TextColor3 = Theme.TextDim
-NoclipSub.TextTransparency = 0.3
-NoclipSub.Font = Enum.Font.Gotham
-NoclipSub.TextSize = 11
-NoclipSub.TextXAlignment = Enum.TextXAlignment.Left
-NoclipSub.Parent = NoclipCard
+-- ❌ NoclipSub (descrição) REMOVIDO
 
 local NoclipToggle = Instance.new("TextButton")
 NoclipToggle.Size = UDim2.new(0, 130, 0, 44)
@@ -938,8 +942,9 @@ NoclipToggle.MouseLeave:Connect(function()
     tween(NoclipToggle, {Size = UDim2.new(0, 130, 0, 44), Position = UDim2.new(1, -148, 0.5, -22)}, 0.12)
 end)
 
+--// ===== KEYBINDS =====
 createSectionTitle(setPage, "TECLAS PERSONALIZADAS", 3)
-local KeyCard = createCard(setPage, 220, 4)
+local KeyCard = createCard(setPage, 280, 4)
 
 local KeybindLabels = {}
 local listeningFor = nil
@@ -955,7 +960,7 @@ local function makeKeybindRow(parent, labelText, keyName, yPos)
     label.TextSize = 13
     label.TextXAlignment = Enum.TextXAlignment.Left
     label.Parent = parent
-
+    
     local keyBtn = Instance.new("TextButton")
     keyBtn.Size = UDim2.new(0, 130, 0, 40)
     keyBtn.Position = UDim2.new(1, -148, 0, yPos)
@@ -969,7 +974,7 @@ local function makeKeybindRow(parent, labelText, keyName, yPos)
     keyBtn.Parent = parent
     addCorner(keyBtn, 10)
     addStroke(keyBtn, Theme.Stroke, 1, 0.4)
-
+    
     keyBtn.MouseEnter:Connect(function()
         tween(keyBtn, {BackgroundColor3 = Theme.CardHover}, 0.12)
     end)
@@ -993,6 +998,43 @@ makeKeybindRow(KeyCard, "Ativar Speed", "Speed", 70)
 makeKeybindRow(KeyCard, "Abrir/Fechar UI", "ToggleUI", 120)
 makeKeybindRow(KeyCard, "Ativar Noclip", "Noclip", 170)
 
+-- 🆕 Botão "Remover Teclas" (sem emoji, cor fixa)
+local RemoveAllBtn = Instance.new("TextButton")
+RemoveAllBtn.Size = UDim2.new(1, -36, 0, 42)
+RemoveAllBtn.Position = UDim2.new(0, 18, 0, 220)
+RemoveAllBtn.BackgroundColor3 = Color3.fromRGB(255, 255, 255)
+RemoveAllBtn.BorderSizePixel = 0
+RemoveAllBtn.Text = "Remover Teclas"
+RemoveAllBtn.TextColor3 = Color3.fromRGB(255, 255, 255)
+RemoveAllBtn.Font = Enum.Font.GothamBold
+RemoveAllBtn.TextSize = 13
+RemoveAllBtn.AutoButtonColor = false
+RemoveAllBtn.Parent = KeyCard
+addCorner(RemoveAllBtn, 10)
+addGradient(RemoveAllBtn, Theme.Danger, Theme.DangerDark, 0)
+
+RemoveAllBtn.MouseEnter:Connect(function()
+    tween(RemoveAllBtn, {Size = UDim2.new(1, -32, 0, 42), Position = UDim2.new(0, 16, 0, 220)}, 0.12)
+end)
+RemoveAllBtn.MouseLeave:Connect(function()
+    tween(RemoveAllBtn, {Size = UDim2.new(1, -36, 0, 42), Position = UDim2.new(0, 18, 0, 220)}, 0.12)
+end)
+
+RemoveAllBtn.MouseButton1Click:Connect(function()
+    -- Define todas as teclas como "Unknown" (nenhuma)
+    Keybinds.Fly = Enum.KeyCode.Unknown
+    Keybinds.Speed = Enum.KeyCode.Unknown
+    Keybinds.ToggleUI = Enum.KeyCode.Unknown
+    Keybinds.Noclip = Enum.KeyCode.Unknown
+    
+    -- Atualiza os botões visuais
+    for keyName, btn in pairs(KeybindLabels) do
+        btn.Text = "Nenhuma"
+        btn.TextColor3 = Theme.TextDim
+    end
+    -- ✅ NÃO muda cor do botão (mantém vermelho)
+end)
+
 local hint = Instance.new("TextLabel")
 hint.Size = UDim2.new(1, 0, 0, 20)
 hint.BackgroundTransparency = 1
@@ -1005,6 +1047,7 @@ hint.TextXAlignment = Enum.TextXAlignment.Left
 hint.LayoutOrder = 5
 hint.Parent = setPage
 
+--// ===== CHANGELOG =====
 createSectionTitle(setPage, "ATUALIZAÇÕES", 6)
 
 local changelogHeight = 30 + (#CHANGELOG * 18)
@@ -1029,6 +1072,9 @@ setupTabHover("Fly")
 setupTabHover("Teleport")
 setupTabHover("Config")
 
+--// ==========================================
+--// UPDATE SPEED UI
+--// ==========================================
 function updateSpeedUI()
     local ratio = (speed - CONFIG.MinSpeed) / (CONFIG.MaxSpeed - CONFIG.MinSpeed)
     SpeedValue.Text = tostring(math.floor(speed))
@@ -1056,6 +1102,9 @@ end
 MinusBtn.MouseButton1Click:Connect(function() changeSpeed(-CONFIG.StepSize) end)
 PlusBtn.MouseButton1Click:Connect(function() changeSpeed(CONFIG.StepSize) end)
 
+--// ==========================================
+--// SISTEMA DE VOO
+--// ==========================================
 local flying = false
 local bodyVelocity, bodyGyro, connection
 
@@ -1064,19 +1113,19 @@ local function startFly()
     if not char then return end
     local hrp = char:FindFirstChild("HumanoidRootPart")
     if not hrp then return end
-
+    
     bodyVelocity = Instance.new("BodyVelocity")
     bodyVelocity.MaxForce = Vector3.new(math.huge, math.huge, math.huge)
     bodyVelocity.Velocity = Vector3.zero
     bodyVelocity.Parent = hrp
-
+    
     bodyGyro = Instance.new("BodyGyro")
     bodyGyro.MaxTorque = Vector3.new(math.huge, math.huge, math.huge)
     bodyGyro.P = 1000
     bodyGyro.D = 50
     bodyGyro.CFrame = hrp.CFrame
     bodyGyro.Parent = hrp
-
+    
     connection = RunService.RenderStepped:Connect(function()
         if not flying or not hrp or not hrp.Parent then return end
         local moveDir = Vector3.zero
@@ -1120,6 +1169,9 @@ end
 
 FlyBtn.MouseButton1Click:Connect(toggleFly)
 
+--// ==========================================
+--// SISTEMA DE SPEED
+--// ==========================================
 local speeding = false
 local speedConnection
 
@@ -1174,6 +1226,9 @@ changeSpeed = function(delta)
     if speeding then applyWalkSpeed() end
 end
 
+--// ==========================================
+--// SISTEMA DE NOCLIP (CORRIGIDO)
+--// ==========================================
 local noclipRunning = false
 local noclipConnection = nil
 local originalCollide = {}
@@ -1239,19 +1294,21 @@ end
 
 NoclipToggle.MouseButton1Click:Connect(toggleNoclip)
 
+--// ==========================================
+--// SISTEMA DE ANTI-AFK
+--// ==========================================
 local antiAfkRunning = false
 local antiAfkConnection = nil
 
 local function startAntiAfk()
     if antiAfkRunning then return end
     antiAfkRunning = true
-
+    
     AfkStatus.TextColor3 = Theme.Success
     AfkStatus.Text = "ANTI-AFK  ✓"
     AfkToggle.Text = "ATIVADO"
     AfkGradient.Color = gradOn()
-    AfkSub.Text = "Protegido contra kick de 20 min"
-
+    
     pcall(function()
         player.Idled:Connect(function()
             if not antiAfkRunning then return end
@@ -1261,7 +1318,7 @@ local function startAntiAfk()
             end)
         end)
     end)
-
+    
     if antiAfkConnection then antiAfkConnection:Disconnect() end
     antiAfkConnection = task.spawn(function()
         while antiAfkRunning do
@@ -1271,13 +1328,6 @@ local function startAntiAfk()
                 VirtualUser:CaptureController()
                 VirtualUser:ClickButton2(Vector2.new(0, 0))
             end)
-            if antiAfkRunning then
-                AfkSub.Text = "Último clique: agora"
-                task.wait(3)
-                if antiAfkRunning then
-                    AfkSub.Text = "Protegido contra kick de 20 min"
-                end
-            end
         end
     end)
 end
@@ -1288,7 +1338,6 @@ local function stopAntiAfk()
     AfkStatus.Text = "ANTI-AFK"
     AfkToggle.Text = "DESATIVADO"
     AfkGradient.Color = gradOff()
-    AfkSub.Text = "Clique invisível a cada 5 min"
     if antiAfkConnection then
         pcall(task.cancel, antiAfkConnection)
         antiAfkConnection = nil
@@ -1299,6 +1348,9 @@ AfkToggle.MouseButton1Click:Connect(function()
     if antiAfkRunning then stopAntiAfk() else startAntiAfk() end
 end)
 
+--// ==========================================
+--// UI PEQUENA (com DADO 🎲)
+--// ==========================================
 local SmallGui = Instance.new("ScreenGui")
 SmallGui.Name = "FlyToggle"
 SmallGui.ResetOnSpawn = false
@@ -1312,7 +1364,7 @@ FloatingBtn.Size = UDim2.new(0, 60, 0, 60)
 FloatingBtn.Position = UDim2.new(0, 20, 0.5, -30)
 FloatingBtn.BackgroundColor3 = Color3.fromRGB(255, 255, 255)
 FloatingBtn.BorderSizePixel = 0
-FloatingBtn.Text = "☁"
+FloatingBtn.Text = "🎲"
 FloatingBtn.TextColor3 = Color3.fromRGB(255, 255, 255)
 FloatingBtn.Font = Enum.Font.GothamBold
 FloatingBtn.TextSize = 30
@@ -1380,6 +1432,9 @@ end)
 
 CloseBtn.MouseButton1Click:Connect(function() closeUI() end)
 
+--// ==========================================
+--// INPUTS
+--// ==========================================
 UserInputService.InputBegan:Connect(function(input, gpe)
     if gpe then return end
     if input.UserInputType == Enum.UserInputType.MouseWheel then
@@ -1393,8 +1448,13 @@ UserInputService.InputBegan:Connect(function(input, gpe)
         if input.KeyCode == Enum.KeyCode.Escape then
             local btn = KeybindLabels[listeningFor]
             if btn then
-                btn.Text = Keybinds[listeningFor].Name
-                btn.TextColor3 = Theme.Accent2
+                if Keybinds[listeningFor] == Enum.KeyCode.Unknown then
+                    btn.Text = "Nenhuma"
+                    btn.TextColor3 = Theme.TextDim
+                else
+                    btn.Text = Keybinds[listeningFor].Name
+                    btn.TextColor3 = Theme.Accent2
+                end
                 tween(btn, {BackgroundColor3 = Theme.BgSecondary}, 0.15)
             end
             listeningFor = nil
@@ -1411,12 +1471,12 @@ UserInputService.InputBegan:Connect(function(input, gpe)
         listeningFor = nil
         return
     end
-
+    
     if gpe then return end
-    if input.KeyCode == Keybinds.ToggleUI then toggleUI() end
-    if input.KeyCode == Keybinds.Fly then toggleFly() end
-    if input.KeyCode == Keybinds.Speed then toggleSpeed() end
-    if input.KeyCode == Keybinds.Noclip then toggleNoclip() end
+    if Keybinds.ToggleUI ~= Enum.KeyCode.Unknown and input.KeyCode == Keybinds.ToggleUI then toggleUI() end
+    if Keybinds.Fly ~= Enum.KeyCode.Unknown and input.KeyCode == Keybinds.Fly then toggleFly() end
+    if Keybinds.Speed ~= Enum.KeyCode.Unknown and input.KeyCode == Keybinds.Speed then toggleSpeed() end
+    if Keybinds.Noclip ~= Enum.KeyCode.Unknown and input.KeyCode == Keybinds.Noclip then toggleNoclip() end
     if input.KeyCode == Enum.KeyCode.Up then changeSpeed(CONFIG.StepSize) end
     if input.KeyCode == Enum.KeyCode.Down then changeSpeed(-CONFIG.StepSize) end
 end)
@@ -1429,7 +1489,7 @@ player.CharacterAdded:Connect(function()
         stopFly()
     end
     if speeding then startSpeed() end
-
+    
     if noclipRunning then
         originalCollide = {}
         task.wait(0.3)
@@ -1442,7 +1502,7 @@ task.wait(0.05)
 tween(Main, {Size = CONFIG.UISize, Position = CONFIG.UIOffset}, 0.35, Enum.EasingStyle.Back)
 
 StarterGui:SetCore("SendNotification", {
-    Title = "INVENCIVEL HUB v" .. CONFIG.Version,
-    Text = "Botão pequeno voltou com nuvem ☁",
+    Title = "RAMDOM HUB v" .. CONFIG.Version,
+    Text = "Remover Teclas + UI limpa",
     Duration = 5,
 })
