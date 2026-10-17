@@ -1,6 +1,6 @@
 --[[
     ╔═══════════════════════════════════════╗
-    ║        RAMDOM HUB  v3.6.1             ║
+    ║        RAMDOM HUB  v3.7               ║
     ║        Fly • Speed • Teleport         ║
     ╚═══════════════════════════════════════╝
 ]]
@@ -30,7 +30,7 @@ local CONFIG = {
     DefaultSpeed = 50,
     StepSize = 25,
     DefaultWalkSpeed = 16,
-    Version = "3.6.1",
+    Version = "3.7",
     UISize = UDim2.new(0, 620, 0, 500),
     UIOffset = UDim2.new(0.5, -310, 0.5, -250),
     AntiAfkInterval = 300,
@@ -41,9 +41,9 @@ local speed = CONFIG.DefaultSpeed
 
 --// 📝 Histórico de atualizações (só as 3 mais recentes)
 local CHANGELOG = {
+    {version = "v3.7", notes = "Botão X fecha o script inteiro"},
     {version = "v3.6.1", notes = "Hitbox do drag maior + arrasto contínuo"},
     {version = "v3.6", notes = "Escala de UI + arrastar em todas as bordas"},
-    {version = "v3.5.3", notes = "Todos os ☁ viraram 🎲"},
 }
 
 --// Keybinds configuráveis
@@ -123,7 +123,6 @@ local function makeDraggable(handle, target)
     local dragging = false
     local dragStart, startPos
     
-    -- INÍCIO do drag (mouse botão esquerdo OU toque)
     handle.InputBegan:Connect(function(input)
         if input.UserInputType == Enum.UserInputType.MouseButton1
         or input.UserInputType == Enum.UserInputType.Touch then
@@ -131,7 +130,6 @@ local function makeDraggable(handle, target)
             dragStart = input.Position
             startPos = target.Position
             
-            -- Escuta o FIM do drag direto nesse input
             input.Changed:Connect(function()
                 if input.UserInputState == Enum.UserInputState.End then
                     dragging = false
@@ -140,7 +138,6 @@ local function makeDraggable(handle, target)
         end
     end)
     
-    -- MOVIMENTO contínuo enquanto segura
     handle.InputChanged:Connect(function(input)
         if not dragging then return end
         if input.UserInputType == Enum.UserInputType.MouseMovement
@@ -276,7 +273,6 @@ CloseBtn.MouseLeave:Connect(function()
     tween(CloseBtn, {BackgroundTransparency = 0.85, BackgroundColor3 = Color3.fromRGB(255,255,255)}, 0.15)
 end)
 
--- Header também arrasta
 makeDraggable(Header, Main)
 
 -- ✅ ==========================================
@@ -286,15 +282,13 @@ local function createDragHandle(axis)
     local h = Instance.new("Frame")
     h.Name = "Drag_" .. axis
     h.BackgroundTransparency = 1
-    h.BackgroundColor3 = Color3.fromRGB(255, 0, 0)
     h.BorderSizePixel = 0
     h.Active = true
     h.ZIndex = 10
     h.Parent = Main
     
-    -- 🎯 HITBOX AUMENTADA
-    local EDGE = 16      -- bordas
-    local CORNER = 36    -- cantos
+    local EDGE = 16
+    local CORNER = 36
     
     if axis == "left" then
         h.Size = UDim2.new(0, EDGE, 1, -HEADER_H)
@@ -1565,6 +1559,50 @@ local function toggleUI()
     if uiOpen then closeUI() else openUI() end
 end
 
+-- ✅ ==========================================
+-- ✅ FUNÇÃO QUE DESTRÓI O SCRIPT INTEIRO
+-- ✅ ==========================================
+local function destroyScript()
+    -- 1. Desliga Voo
+    if flying then
+        flying = false
+        stopFly()
+    end
+    
+    -- 2. Desliga Speed
+    if speeding then
+        speeding = false
+        stopSpeed()
+    end
+    
+    -- 3. Desliga Noclip
+    if noclipRunning then
+        noclipRunning = false
+        stopNoclip()
+    end
+    
+    -- 4. Desliga Anti-AFK
+    if antiAfkRunning then
+        antiAfkRunning = false
+        stopAntiAfk()
+    end
+    
+    -- 5. Destrói a UI Grande
+    pcall(function()
+        if ScreenGui then ScreenGui:Destroy() end
+    end)
+    
+    -- 6. Destrói o Botão Flutuante
+    pcall(function()
+        if SmallGui then SmallGui:Destroy() end
+    end)
+end
+
+-- ✅ Botão X do header AGORA CHAMA A DESTRUIÇÃO TOTAL
+CloseBtn.MouseButton1Click:Connect(function()
+    destroyScript()
+end)
+
 FloatingBtn.MouseEnter:Connect(function()
     tween(FloatingBtn, {Size = UDim2.new(0, 66, 0, 66)}, 0.15)
 end)
@@ -1593,8 +1631,6 @@ FloatingBtn.InputEnded:Connect(function(input)
         fDrag = false
     end
 end)
-
-CloseBtn.MouseButton1Click:Connect(function() closeUI() end)
 
 --// ==========================================
 --// INPUTS
@@ -1666,6 +1702,6 @@ tween(Main, {Size = CONFIG.UISize, Position = CONFIG.UIOffset}, 0.35, Enum.Easin
 
 StarterGui:SetCore("SendNotification", {
     Title = "RAMDOM HUB v" .. CONFIG.Version,
-    Text = "Hitbox do drag melhorada 🖐️",
+    Text = "X fecha o script inteiro",
     Duration = 5,
 })
